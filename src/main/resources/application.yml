@@ -15,7 +15,7 @@ spring:
         enabled: false
 
   cache:
-    type: redis
+    type: none
     redis:
       time-to-live: 600000  # 30분 TTL (밀리초 단위)
       cache-null-values: false
