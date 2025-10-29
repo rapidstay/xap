@@ -20,13 +20,32 @@ import java.time.Duration;
 public class RedisConfig {
 
     @Bean
-    @Profile("local") // 로컬에서만 Redis 활성화
-    public RedisConnectionFactory redisConnectionFactory() {
+    @Profile("local") // 로컬용
+    public RedisConnectionFactory localRedisConnectionFactory() {
         return new LettuceConnectionFactory("localhost", 6379);
     }
 
     @Bean
+    @Profile("prod") // Render 배포용
+    public RedisConnectionFactory prodRedisConnectionFactory() {
+        String host = System.getenv("REDIS_HOST");
+        int port = Integer.parseInt(System.getenv().getOrDefault("REDIS_PORT", "6379"));
+        String password = System.getenv("REDIS_PASSWORD"); // 비밀번호 설정된 경우
+
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(host, port);
+        if (password != null && !password.isEmpty()) {
+            factory.setPassword(password);
+        }
+        return factory;
+    }
+
+    @Bean
     public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+
+        if (connectionFactory == null) {
+            throw new IllegalStateException("❌ RedisConnectionFactory is null. Check active profile or env vars.");
+        }
+        
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))
                 .serializeValuesWith(
