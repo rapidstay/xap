@@ -1,12 +1,12 @@
-# ✅ 1단계: 빌드 단계 (Gradle로 JAR 생성)
-FROM gradle:8.5-jdk17 AS builder
+# 빌드 단계 (JDK 21로)
+FROM gradle:8.5-jdk21 AS builder
 WORKDIR /app
 COPY . .
 RUN gradle clean build -x test
 
-# ✅ 2단계: 실행 단계 (JAR만 복사)
-FROM eclipse-temurin:17-jdk
+# 실행 단계
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
