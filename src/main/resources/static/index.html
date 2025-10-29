@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>RapidStay – Hotel Search</title>
+    <style>
+        body {
+          font-family: "Noto Sans KR", sans-serif;
+          margin: 0; padding: 0;
+          background: #fafafa;
+        }
+        header {
+          background: #222; color: #fff;
+          padding: 16px 24px; font-size: 20px;
+        }
+        #search-bar {
+          background: #fff;
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, button {
+          padding: 10px; font-size: 14px;
+        }
+        #hotel-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 20px; padding: 30px;
+        }
+        .hotel-card {
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          overflow: hidden;
+          transition: transform .2s ease;
+          cursor: pointer;
+        }
+        .hotel-card:hover { transform: translateY(-5px); }
+        .hotel-card img {
+          width: 100%; height: 200px; object-fit: cover;
+        }
+        .hotel-info { padding: 15px; }
+        .hotel-info h3 { margin: 0 0 8px 0; }
+        .amenities { font-size: 13px; color: #666; }
+
+        /* 지도 팝업 */
+        .modal {
+          display: none; position: fixed; z-index: 1000;
+          left: 0; top: 0; width: 100%; height: 100%;
+          background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+          background: #fff; margin: 10% auto; padding: 20px;
+          border-radius: 8px; width: 80%; max-width: 800px;
+        }
+        .close {
+          float: right; font-size: 24px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<header>🏨 RapidStay Hotel Search</header>
+
+<section id="search-bar">
+    <input type="text" id="city" placeholder="도시명 (예: Seoul)">
+    <input type="date" id="checkIn">
+    <input type="date" id="checkOut">
+    <button id="searchBtn">검색</button>
+</section>
+
+<section id="hotel-list"></section>
+
+<div style="text-align:center; margin:20px;">
+    <button id="openMapBtn">전체 지도 보기</button>
+</div>
+
+<!-- 지도 모달 -->
+<div id="mapModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeMap()">&times;</span>
+        <div id="googleMap" style="width:100%;height:500px;"></div>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'hotelSearchCache';
+
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const city = document.getElementById('city').value || 'Seoul';
+      const checkIn = document.getElementById('checkIn').value || '2025-11-01';
+      const checkOut = document.getElementById('checkOut').value || '2025-11-03';
+      const cacheKey = `${city}_${checkIn}_${checkOut}`;
+
+      // 캐시 확인
+      const cache = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (cache[cacheKey]) {
+        console.log('🔁 캐시 데이터 사용');
+        renderHotels(cache[cacheKey]);
+        return;
+      }
+
+      // API 호출
+      const res = await fetch(`/api/hotels/search?city=${city}&checkIn=${checkIn}&checkOut=${checkOut}`);
+      const data = await res.json();
+
+      // 캐시 저장
+      cache[cacheKey] = data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
+
+      renderHotels(data);
+    });
+
+    // 뒤로가기 시 복원
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        const cache = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        const lastKey = Object.keys(cache).pop();
+        if (lastKey) renderHotels(cache[lastKey]);
+      }
+    });
+
+    // ✅ 비동기 렌더링 + 클릭 이벤트 바인딩 방식
+    function renderHotels(hotels) {
+  const validHotels = hotels.filter(h => h.id != null);
+  const list = document.getElementById('hotel-list');
+
+  list.innerHTML = validHotels.map(h => `
+    <div class="hotel-card" data-id="${h.id}">
+      <img src="https://picsum.photos/seed/${h.name}/400/250" alt="${h.name}">
+      <div class="hotel-info">
+        <h3>${h.name}</h3>
+        <p>📍 ${h.address || h.city}</p>
+        <p>⭐ ${h.rating?.toFixed(1) || '4.5'} / 5.0</p>
+      </div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.hotel-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.id;
+      console.log('➡️ 클릭:', id);
+      if (!id) return alert('⚠️ 호텔 ID 없음');
+      window.location.href = `detail.html?id=${id}`;
+    });
+  });
+
+  window.currentHotels = hotels; // 지도용 전역 변수 저장
+}
+
+    // ✅ 구글 지도
+    document.getElementById('openMapBtn').onclick = function() {
+      document.getElementById('mapModal').style.display = 'block';
+      initMap();
+    };
+    function closeMap() {
+      document.getElementById('mapModal').style.display = 'none';
+    }
+
+    function initMap() {
+      const map = new google.maps.Map(document.getElementById('googleMap'), {
+        zoom: 12,
+        center: { lat: 37.5665, lng: 126.9780 }
+      });
+
+      (window.currentHotels || []).forEach(hotel => {
+        if (hotel.latitude && hotel.longitude) {
+          new google.maps.Marker({
+            position: { lat: hotel.latitude, lng: hotel.longitude },
+            map,
+            title: hotel.name
+          });
+        }
+      });
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBMfUN2Rq4MS7VHqNTlbK23JEi_T6QUQPU"></script>
+
+</body>
+</html>

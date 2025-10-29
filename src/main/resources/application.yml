@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: rapidstay-xap
+
+  # 💾 Redis 캐시 설정
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 5000        # 10분 (밀리초 단위)
+      repositories:
+        enabled: false
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000  # 30분 TTL (밀리초 단위)
+      cache-null-values: false
+
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
+# ✅ 로깅 (운영 시 깔끔한 로그)
+logging:
+  level:
+    root: INFO
+    com.rapidstay.xap: DEBUG
+
+# 🧭 CORS 설정 (Firebase 호출 허용)
+cors:
+  allowed-origins: "https://rapidstay-c7f8e.web.app"
+  allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
+  allowed-headers: "*"
+
+# 📡 외부 API (익스피디아, 향후 확장)
+external:
+  expedia:
+    base-url: "https://test.expedia-rapidapi.com"
+    api-key: "YOUR_API_KEY_HERE"
