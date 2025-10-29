@@ -45,7 +45,7 @@ public class RedisConfig {
         if (connectionFactory == null) {
             throw new IllegalStateException("❌ RedisConnectionFactory is null. Check active profile or env vars.");
         }
-        
+
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))
                 .serializeValuesWith(

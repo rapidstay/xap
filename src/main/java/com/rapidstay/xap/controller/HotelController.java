@@ -1,6 +1,9 @@
 package com.rapidstay.xap.controller;
 
+import com.rapidstay.xap.dto.HotelDetailRequest;
+import com.rapidstay.xap.dto.HotelDetailResponse;
 import com.rapidstay.xap.dto.HotelResponse;
+import com.rapidstay.xap.dto.HotelSearchRequest;
 import com.rapidstay.xap.service.HotelService;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +19,7 @@ public class HotelController {
         this.hotelService = hotelService;
     }
 
+    // ✅ 서버 상태 체크용
     @GetMapping("/")
     public String home() {
         return "✅ XAP Hotel API Server is running!";
@@ -26,18 +30,23 @@ public class HotelController {
         return "🏨 Test Hotel endpoint OK";
     }
 
-    @GetMapping("/search")
-    public List<HotelResponse> searchHotels(
-            @RequestParam String city,
-            @RequestParam String checkIn,
-            @RequestParam String checkOut
-    ) {
-        return hotelService.searchHotels(city, checkIn, checkOut);
+    // ✅ 호텔 검색 (rooms 포함)
+    @PostMapping("/search")
+    public List<HotelResponse> searchHotelsWithRooms(@RequestBody HotelSearchRequest request) {
+        System.out.println("🔎 [POST /search] 요청 수신: " + request);
+        return hotelService.searchHotelsWithRooms(request);
     }
 
-    @GetMapping("/detail")
-    public HotelResponse getHotelDetail(@RequestParam String hotelId) {
-        return hotelService.getHotelDetailById(hotelId);
+    // ✅ 상세 페이지 조회
+    @PostMapping("/detail")
+    public HotelDetailResponse getHotelDetail(@RequestBody HotelDetailRequest request) {
+        System.out.println("📄 [POST /detail] 요청 수신: " + request);
+        return hotelService.getHotelDetail(
+                request.getHotelId(),
+                request.getCity(),
+                request.getCheckIn(),
+                request.getCheckOut(),
+                request.getRooms()
+        );
     }
-
 }
