@@ -1,9 +1,6 @@
 package com.rapidstay.xap.controller;
 
-import com.rapidstay.xap.dto.HotelDetailRequest;
-import com.rapidstay.xap.dto.HotelDetailResponse;
-import com.rapidstay.xap.dto.HotelResponse;
-import com.rapidstay.xap.dto.HotelSearchRequest;
+import com.rapidstay.xap.dto.*;
 import com.rapidstay.xap.service.HotelService;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,9 +29,8 @@ public class HotelController {
 
     // ✅ 호텔 검색 (rooms 포함)
     @PostMapping("/search")
-    public List<HotelResponse> searchHotelsWithRooms(@RequestBody HotelSearchRequest request) {
-        System.out.println("🔎 [POST /search] 요청 수신: " + request);
-        return hotelService.searchHotelsWithRooms(request);
+    public PagedResult<HotelResponse> searchHotels(@RequestBody HotelSearchRequest req) {
+        return hotelService.searchHotels(req);
     }
 
     // ✅ 상세 페이지 조회

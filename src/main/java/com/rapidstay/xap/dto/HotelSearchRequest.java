@@ -10,6 +10,10 @@ public class HotelSearchRequest {
     private String checkOut;
     private List<RoomInfo> rooms = new ArrayList<>();
 
+    // ✅ 추가된 페이징 필드
+    private int page = 1;        // 기본값: 1페이지
+    private int pageSize = 20;   // 기본값: 20개씩
+
     public HotelSearchRequest() {
     }
 
@@ -33,11 +37,17 @@ public class HotelSearchRequest {
     public List<RoomInfo> getRooms() { return rooms; }
     public void setRooms(List<RoomInfo> rooms) { this.rooms = rooms; }
 
+    public int getPage() { return page; }
+    public void setPage(int page) { this.page = page; }
+
+    public int getPageSize() { return pageSize; }
+    public void setPageSize(int pageSize) { this.pageSize = pageSize; }
+
     // ◀︎ 중첩 클래스 : 객실별 인원 + 아동 나이
     public static class RoomInfo {
-        private Integer adults;            // 성인 수
-        private Integer children;          // 아동 수
-        private List<Integer> childAges;   // 아동 나이 배열
+        private Integer adults;
+        private Integer children;
+        private List<Integer> childAges;
 
         public RoomInfo() {
         }
@@ -48,7 +58,6 @@ public class HotelSearchRequest {
             this.childAges = childAges;
         }
 
-        // getters / setters
         public Integer getAdults() { return adults; }
         public void setAdults(Integer adults) { this.adults = adults; }
 

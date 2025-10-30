@@ -1,9 +1,7 @@
 package com.rapidstay.xap.service;
 
 import com.rapidstay.xap.client.ExpediaClient;
-import com.rapidstay.xap.dto.HotelDetailResponse;
-import com.rapidstay.xap.dto.HotelResponse;
-import com.rapidstay.xap.dto.HotelSearchRequest;
+import com.rapidstay.xap.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +11,7 @@ import java.util.*;
 public class HotelService {
 
     private final ExpediaClient expediaClient;
-    private final CityService cityService; // ✅ 추가
+    private final CityService cityService;
 
     @Value("${rapidstay.mock.enabled:true}")
     private boolean useMock;
@@ -23,62 +21,51 @@ public class HotelService {
         this.cityService = cityService;
     }
 
-    /** ✅ 도시명 → regionId 변환 후 검색 */
-    public List<HotelResponse> searchHotels(String cityName, String checkIn, String checkOut, List<HotelSearchRequest.RoomInfo> rooms) {
-        Optional<Long> regionOpt = cityService.findRegionId(cityName);
-        if (regionOpt.isEmpty()) {
-            System.out.println("⚠️ 지역 매칭 실패: " + cityName);
-            return Collections.emptyList();
-        }
-        long regionId = regionOpt.get();
+    /** ✅ 도시명 → regionId 변환 후 호텔 목록 조회 + 페이징 적용 */
+    public PagedResult<HotelResponse> searchHotels(HotelSearchRequest req) {
+        // Expedia API로 전체 결과 조회
+        List<HotelResponse> allHotels = expediaClient.searchHotelsByRegion(
+                req.getCity(),
+                req.getCheckIn(),
+                req.getCheckOut(),
+                req.getRooms()
+        );
 
-        if (useMock) {
-            System.out.println("🧪 [Mock Mode] 지역 ID: " + regionId + " — Mock 데이터 반환");
-            return mockHotels(cityName);
-        } else {
-            System.out.println("🌐 [Live Mode] Expedia API 호출 — regionId: " + regionId);
-            return expediaClient.searchHotelsByRegion(regionId, checkIn, checkOut, rooms);
-        }
+        // ✅ 페이징 계산
+        int totalCount = allHotels.size();
+        int page = Math.max(1, req.getPage());
+        int pageSize = Math.max(1, req.getPageSize());
+        int start = (page - 1) * pageSize;
+        int end = Math.min(start + pageSize, totalCount);
+
+        List<HotelResponse> pagedHotels = allHotels.subList(start, end);
+
+        return new PagedResult<>(page, pageSize, totalCount, pagedHotels);
     }
 
-    private List<HotelResponse> mockHotels(String city) {
-        List<HotelResponse> hotels = new ArrayList<>();
-        hotels.add(HotelResponse.builder()
-                .id(1L)
-                .name("RapidStay Hotel")
-                .address("서울특별시 중구 세종대로 110")
-                .city(city)
-                .rating(4.7)
-                .latitude(37.5665)
-                .longitude(126.9780)
-                .lowestPrice("175000")
-                .build());
-
-        hotels.add(HotelResponse.builder()
-                .id(2L)
-                .name("Eden Garden Hotel")
-                .address("부산광역시 해운대구 해운대로 321")
-                .city("Busan")
-                .rating(4.5)
-                .latitude(35.1587)
-                .longitude(129.1604)
-                .lowestPrice("185000")
-                .build());
-
-        return hotels;
-    }
-
+    /** ✅ 호텔 목록만 필요할 때 */
     public List<HotelResponse> searchHotelsWithRooms(HotelSearchRequest request) {
-        return searchHotels(request.getCity(), request.getCheckIn(), request.getCheckOut(), request.getRooms());
+        return searchHotels(request).getHotels();
     }
 
+    /** ✅ 상세 페이지용 — 특정 호텔 ID 기반 조회 */
     public HotelDetailResponse getHotelDetail(String hotelId,
                                               String city,
                                               String checkIn,
                                               String checkOut,
                                               List<HotelSearchRequest.RoomInfo> rooms) {
 
-        List<HotelResponse> results = searchHotels(city, checkIn, checkOut, rooms);
+        // 요청 객체 구성
+        HotelSearchRequest req = new HotelSearchRequest();
+        req.setCity(city);
+        req.setCheckIn(checkIn);
+        req.setCheckOut(checkOut);
+        req.setRooms(rooms);
+        req.setPage(1);
+        req.setPageSize(100); // 기본 100개만 로드
+
+        // 호텔 목록에서 해당 ID 찾기
+        List<HotelResponse> results = searchHotelsWithRooms(req);
         HotelResponse base = results.stream()
                 .filter(h -> String.valueOf(h.getId()).equals(hotelId))
                 .findFirst()
@@ -86,6 +73,7 @@ public class HotelService {
 
         if (base == null) return null;
 
+        // ✅ 상세 데이터 Mock 구성
         return HotelDetailResponse.builder()
                 .id(base.getId())
                 .name(base.getName())
@@ -105,6 +93,7 @@ public class HotelService {
                 .build();
     }
 
+    /** ✅ 테스트용 Mock Room 데이터 생성 */
     private List<HotelDetailResponse.RoomDetail> buildMockRooms(String hotelName) {
         List<HotelDetailResponse.RoomDetail> list = new ArrayList<>();
         for (int i = 1; i <= 3; i++) {

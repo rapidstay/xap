@@ -27,7 +27,7 @@ public class ExpediaClient {
     /**
      * regionId 기반 호텔 리스트 조회
      */
-    public List<HotelResponse> searchHotelsByRegion(Long regionId, String checkIn, String checkOut, List<HotelSearchRequest.RoomInfo> rooms) {
+    public List<HotelResponse> searchHotelsByRegion(String regionId, String checkIn, String checkOut, List<HotelSearchRequest.RoomInfo> rooms) {
         if (regionId == null) {
             System.err.println("⚠️ regionId 가 null 입니다 — 요청 생략");
             return List.of();
