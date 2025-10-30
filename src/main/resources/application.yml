@@ -5,40 +5,40 @@ spring:
   application:
     name: rapidstay-xap
 
-  # 💾 Redis 캐시 설정
   data:
     redis:
-      host: localhost
+      host: red-d40ub0k9c44c73cdgu60
       port: 6379
-      timeout: 5000        # 10분 (밀리초 단위)
-      repositories:
-        enabled: false
-
+      timeout: 5000
   cache:
     type: redis
     redis:
-      url: redis://red-d40ub0k9c44c73cdgu60:6379
-      time-to-live: 600000  # 30분 TTL (밀리초 단위)
+      time-to-live: 1800000
       cache-null-values: false
 
   jackson:
     serialization:
+      indent_output: true
       fail-on-empty-beans: false
 
-# ✅ 로깅 (운영 시 깔끔한 로그)
 logging:
   level:
     root: INFO
     com.rapidstay.xap: DEBUG
 
-# 🧭 CORS 설정 (Firebase 호출 허용)
+# 🧭 CORS (테스트용 — Firebase)
 cors:
   allowed-origins: "https://rapidstay-c7f8e.web.app"
   allowed-methods: "GET,POST,PUT,DELETE,OPTIONS"
   allowed-headers: "*"
 
-# 📡 외부 API (익스피디아, 향후 확장)
-external:
-  expedia:
-    base-url: "https://test.expedia-rapidapi.com"
-    api-key: "YOUR_API_KEY_HERE"
+# 📡 Expedia API
+expedia:
+  api:
+    url: "https://api.expediapartnersolutions.com/xap/lodging/listings"
+    key: "YOUR_API_KEY_HERE"
+
+# 🧪 Mock 모드
+rapidstay:
+  mock:
+    enabled: true

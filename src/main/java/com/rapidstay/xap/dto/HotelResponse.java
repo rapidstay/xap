@@ -24,4 +24,6 @@ public class HotelResponse implements Serializable {
     private List<String> images;
     private List<String> amenities;
     private List<RoomResponse> rooms;
+    private String lowestPrice;
+    private String expediaUrl;
 }
