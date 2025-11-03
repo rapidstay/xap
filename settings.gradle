@@ -1,1 +1,11 @@
-rootProject.name = 'xap'
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'rapidstay-xap'
+
+// 멀티모듈 구성
+include 'api', 'admin', 'batch', 'common'

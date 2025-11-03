@@ -1,42 +1,54 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.7'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.3.3' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+    id 'java'
 }
 
-group = 'com.rapidstay'
-version = '0.0.1-SNAPSHOT'
-description = 'Spring Web'
+allprojects {
+    group = 'com.rapidstay'
+    version = '0.0.1-SNAPSHOT'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
 
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+subprojects {
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'java'
+
+    // 🔹 공통 설정
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    // 🔹 테스트 설정
+    tasks.withType(Test) {
+        useJUnitPlatform()
+    }
+
+    // 🔹 공통 repositories (혹시 모를 재정의 문제 방지)
+    repositories {
+        mavenCentral()
+    }
 }
 
-repositories {
-	mavenCentral()
+project(':common') {
+    // 🔹 Common 모듈은 bootJar를 사용하지 않음
+    apply plugin: 'java-library'
 }
 
-dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
-
-
+project(':api') {
+    apply plugin: 'org.springframework.boot'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+project(':batch') {
+    apply plugin: 'org.springframework.boot'
+}
+
+project(':admin') {
+    apply plugin: 'org.springframework.boot'
 }
